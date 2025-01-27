@@ -2,8 +2,6 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-// https://chatgpt.com/c/67972503-bbf4-8011-9967-ca73db7c50a2
-
 namespace TetrisWinForms
 {
     public partial class Form1 : Form
@@ -18,64 +16,64 @@ namespace TetrisWinForms
 
         private readonly int[][][] tetrominoes = new int[][][]
         {
-    new int[][] // O-shape
-    {
-        new int[] { 1, 1 },
-        new int[] { 1, 1 }
-    },
-    new int[][] // I-shape
-    {
-        new int[] { 1, 1, 1, 1 }
-    },
-    new int[][] // T-shape
-    {
-        new int[] { 0, 1, 0 },
-        new int[] { 1, 1, 1 }
-    },
-    new int[][] // L-shape
-    {
-        new int[] { 1, 0 },
-        new int[] { 1, 0 },
-        new int[] { 1, 1 }
-    },
-    new int[][] // Z-shape
-    {
-        new int[] { 1, 1, 0 },
-        new int[] { 0, 1, 1 }
-    }
+            new int[][] // O-shape
+            {
+                new int[] { 1, 1 },
+                new int[] { 1, 1 }
+            },
+            new int[][] // I-shape
+            {
+                new int[] { 1, 1, 1, 1 }
+            },
+            new int[][] // T-shape
+            {
+                new int[] { 0, 1, 0 },
+                new int[] { 1, 1, 1 }
+            },
+            new int[][] // L-shape
+            {
+                new int[] { 1, 0 },
+                new int[] { 1, 0 },
+                new int[] { 1, 1 }
+            },
+            new int[][] // Z-shape
+            {
+                new int[] { 1, 1, 0 },
+                new int[] { 0, 1, 1 }
+            }
         };
 
         public Form1()
         {
             InitializeComponent();
+            this.ClientSize = new Size(gridCols * cellSize, gridRows * cellSize);
+            this.DoubleBuffered = true; // Prevent flickering during rendering
+            this.Paint += Form1_Paint;
+            this.KeyDown += Form1_KeyDown;
+
             InitializeGame();
         }
 
         private void InitializeGame()
         {
-            // Initialize grid and timer
             grid = new int[gridRows, gridCols];
             gameTimer = new Timer
             {
-                Interval = 500 // Speed of the game (milliseconds)
+                Interval = 500 // Speed of the game in milliseconds
             };
             gameTimer.Tick += GameTimer_Tick;
 
-            // Spawn the first block
             SpawnBlock();
-
-            // Set up key handling and start the game
-            this.KeyDown += Form1_KeyDown;
             gameTimer.Start();
         }
 
         private void SpawnBlock()
         {
             Random random = new Random();
-            int shapeIndex = random.Next(tetrominoes.GetLength(0));
+            int shapeIndex = random.Next(tetrominoes.Length);
             currentBlock = GetTetromino(shapeIndex);
             blockRow = 0;
-            blockCol = (gridCols - currentBlock.GetLength(1)) / 2; // Center the block
+            blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
         }
 
         private int[,] GetTetromino(int index)
@@ -88,11 +86,42 @@ namespace TetrisWinForms
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    shape[r, c] = tetrominoes[index][r][c]; // Corrected syntax
+                    shape[r, c] = tetrominoes[index][r][c];
                 }
             }
 
             return shape;
+        }
+
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+
+            // Draw the grid
+            for (int y = 0; y < gridRows; y++)
+            {
+                for (int x = 0; x < gridCols; x++)
+                {
+                    if (grid[y, x] == 1)
+                    {
+                        g.FillRectangle(Brushes.Blue, x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                    g.DrawRectangle(Pens.Black, x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+
+            // Draw the current block
+            for (int r = 0; r < currentBlock.GetLength(0); r++)
+            {
+                for (int c = 0; c < currentBlock.GetLength(1); c++)
+                {
+                    if (currentBlock[r, c] == 1)
+                    {
+                        g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                        g.DrawRectangle(Pens.Black, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
         }
 
         private void GameTimer_Tick(object sender, EventArgs e)
@@ -116,22 +145,6 @@ namespace TetrisWinForms
                 {
                     GameOver();
                 }
-            }
-        }
-
-        private void MoveBlockLeft()
-        {
-            if (CanMove(blockRow, blockCol - 1))
-            {
-                blockCol--;
-            }
-        }
-
-        private void MoveBlockRight()
-        {
-            if (CanMove(blockRow, blockCol + 1))
-            {
-                blockCol++;
             }
         }
 
@@ -213,8 +226,8 @@ namespace TetrisWinForms
         private void GameOver()
         {
             gameTimer.Stop();
-            MessageBox.Show("Game Over!", "Tetris");
-            Close();
+            MessageBox.Show("Game Over!");
+            InitializeGame();
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
@@ -222,45 +235,22 @@ namespace TetrisWinForms
             switch (e.KeyCode)
             {
                 case Keys.Left:
-                    MoveBlockLeft();
+                    if (CanMove(blockRow, blockCol - 1))
+                        blockCol--;
                     break;
+
                 case Keys.Right:
-                    MoveBlockRight();
+                    if (CanMove(blockRow, blockCol + 1))
+                        blockCol++;
                     break;
+
                 case Keys.Down:
-                    MoveBlockDown();
+                    if (CanMove(blockRow + 1, blockCol))
+                        blockRow++;
                     break;
             }
+
             Refresh();
-        }
-
-        private void Form1_Paint(object sender, PaintEventArgs e)
-        {
-            Graphics g = e.Graphics;
-
-            // Draw the grid
-            for (int row = 0; row < gridRows; row++)
-            {
-                for (int col = 0; col < gridCols; col++)
-                {
-                    Brush brush = grid[row, col] == 1 ? Brushes.Blue : Brushes.Black;
-                    g.FillRectangle(brush, col * cellSize, row * cellSize, cellSize, cellSize);
-                    g.DrawRectangle(Pens.White, col * cellSize, row * cellSize, cellSize, cellSize);
-                }
-            }
-
-            // Draw the current block
-            for (int r = 0; r < currentBlock.GetLength(0); r++)
-            {
-                for (int c = 0; c < currentBlock.GetLength(1); c++)
-                {
-                    if (currentBlock[r, c] == 1)
-                    {
-                        g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                        g.DrawRectangle(Pens.White, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                    }
-                }
-            }
         }
     }
 }
