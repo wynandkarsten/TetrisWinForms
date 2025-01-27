@@ -2,6 +2,8 @@
 using System.Drawing;
 using System.Windows.Forms;
 
+// https://chatgpt.com/c/67972503-bbf4-8011-9967-ca73db7c50a2
+
 namespace TetrisWinForms
 {
     public partial class Form1 : Form
