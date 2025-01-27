@@ -248,9 +248,77 @@ namespace TetrisWinForms
                     if (CanMove(blockRow + 1, blockCol))
                         blockRow++;
                     break;
+
+                case Keys.Up:
+                    RotateBlock();
+                    break;
             }
 
             Refresh();
         }
+
+        private void RotateBlock()
+        {
+            int[,] rotatedBlock = RotateMatrixClockwise(currentBlock);
+
+            // Check if the rotated block fits in the grid
+            if (CanRotate(rotatedBlock))
+            {
+                currentBlock = rotatedBlock;
+            }
+            else
+            {
+                // Optionally, play a sound or indicate rotation failure (if desired)
+            }
+
+            Refresh(); // Redraw the game to show the rotated block
+        }
+
+        private int[,] RotateMatrixClockwise(int[,] matrix)
+        {
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
+            int[,] rotated = new int[cols, rows];
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    rotated[c, rows - 1 - r] = matrix[r, c];
+                }
+            }
+
+            return rotated;
+        }
+
+        private bool CanRotate(int[,] rotatedBlock)
+        {
+            for (int r = 0; r < rotatedBlock.GetLength(0); r++)
+            {
+                for (int c = 0; c < rotatedBlock.GetLength(1); c++)
+                {
+                    if (rotatedBlock[r, c] == 1)
+                    {
+                        int newRow = blockRow + r;
+                        int newCol = blockCol + c;
+
+                        // Check bounds
+                        if (newRow < 0 || newRow >= gridRows || newCol < 0 || newCol >= gridCols)
+                        {
+                            return false;
+                        }
+
+                        // Check collision with the grid
+                        if (grid[newRow, newCol] == 1)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
     }
 }
