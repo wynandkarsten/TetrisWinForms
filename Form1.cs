@@ -78,12 +78,18 @@ namespace TetrisWinForms
 
         private int[,] GetTetromino(int index)
         {
-            int rows = tetrominoes.GetLength(1);
-            int cols = tetrominoes.GetLength(2);
+            int rows = tetrominoes[index].Length;
+            int cols = tetrominoes[index][0].Length;
             int[,] shape = new int[rows, cols];
+
             for (int r = 0; r < rows; r++)
+            {
                 for (int c = 0; c < cols; c++)
-                    shape[r, c] = tetrominoes[index, r, c];
+                {
+                    shape[r, c] = tetrominoes[index][r][c]; // Corrected syntax
+                }
+            }
+
             return shape;
         }
 
