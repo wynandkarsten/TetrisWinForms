@@ -29,17 +29,6 @@ namespace TetrisWinForms
 
     public partial class Form1 : Form
     {
-
-        //private Dictionary<Tetromino, TetrominoColor> tetrominoColorMap = new Dictionary<Tetromino, TetrominoColor>
-        //{
-        //    { Tetromino.OShape, TetrominoColor.Yellow },
-        //    { Tetromino.IShape, TetrominoColor.Cyan },
-        //    { Tetromino.TShape, TetrominoColor.Purple },
-        //    { Tetromino.LShape, TetrominoColor.Blue },
-        //    { Tetromino.ZShape, TetrominoColor.Red },
-        //    { Tetromino.SShape, TetrominoColor.Green }
-        //};
-
         private int[,] grid; // The Tetris grid
         private int gridRows = 20;
         private int gridCols = 10;
@@ -48,27 +37,7 @@ namespace TetrisWinForms
         private int blockRow, blockCol; // Position of the current block
         private Timer gameTimer;
         private int blockType;
-
-        //private Brush GetBrushForColor(TetrominoColor color)
-        //{
-        //    switch (color)
-        //    {
-        //        case TetrominoColor.Blue:
-        //            return Brushes.Blue;
-        //        case TetrominoColor.Red:
-        //            return Brushes.Red;
-        //        case TetrominoColor.Green:
-        //            return Brushes.Green;
-        //        case TetrominoColor.Yellow:
-        //            return Brushes.Yellow;
-        //        case TetrominoColor.Purple:
-        //            return Brushes.Purple;
-        //        case TetrominoColor.Cyan:
-        //            return Brushes.Cyan;
-        //        default:
-        //            return Brushes.Gray;
-        //    }
-        //}
+        private int score = 0;
 
         private readonly int[][][] tetrominoes = new int[][][]
         {
@@ -123,6 +92,7 @@ namespace TetrisWinForms
 
         private void InitializeGame()
         {
+            score = 0;
             grid = new int[gridRows, gridCols];
             gameTimer = new Timer
             {
@@ -136,12 +106,17 @@ namespace TetrisWinForms
 
         private void SpawnBlock()
         {
+            score += 5;
             Random random = new Random();
             int shapeIndex = random.Next(tetrominoes.Length);
             blockType = shapeIndex;
             currentBlock = GetTetromino(shapeIndex);
             blockRow = 0;
-            blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
+
+            //blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
+            Random randomCol = new Random();
+            blockCol = randomCol.Next(1, gridCols - currentBlock.GetLength(1) - 1);
+
         }
 
         private int[,] GetTetromino(int index)
@@ -177,10 +152,6 @@ namespace TetrisWinForms
                     g.DrawRectangle(Pens.Black, x * cellSize, y * cellSize, cellSize, cellSize);
                 }
             }
-
-            //// Get the color for the current block
-            //TetrominoColor currentColor = blockType;
-            //Brush blockBrush = GetBrushForColor(currentColor);
 
             // Draw the current block
             for (int r = 0; r < currentBlock.GetLength(0); r++)
@@ -292,6 +263,7 @@ namespace TetrisWinForms
 
         private void CheckForCompletedRows()
         {
+            int clearedRows = 0;
             for (int r = gridRows - 1; r >= 0; r--)
             {
                 bool isComplete = true;
@@ -307,8 +279,25 @@ namespace TetrisWinForms
                 if (isComplete)
                 {
                     ClearRow(r);
+                    clearedRows++;
                     r++; // Recheck the same row after clearing
                 }
+            }
+            if (clearedRows == 1)
+            {
+                score += 100 * clearedRows;
+            }
+            else if (clearedRows == 2)
+            {
+                score += 200 * clearedRows;
+            }
+            else if (clearedRows == 3)
+            {
+                score += 500 * clearedRows;
+            }
+            else if (clearedRows == 4)
+            {
+                score += 1000 * clearedRows;
             }
         }
 
@@ -331,8 +320,7 @@ namespace TetrisWinForms
         private void GameOver()
         {
             gameTimer.Stop();
-            MessageBox.Show("Game Over! Press 'Y' to restart or 'N' to quit.");
-            //this.KeyPress += GameOver_KeyPress;
+            MessageBox.Show($"Your score: {score}. Press any key to restart.");
             InitializeGame();
         }
 
@@ -354,8 +342,16 @@ namespace TetrisWinForms
             }
         }
 
+        private bool isPaused = false; // Track whether the game is paused
+
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
+            if (isPaused && e.KeyCode != Keys.Escape)
+            {
+                // Ignore all keys except ESC when the game is paused
+                return;
+            }
+
             switch (e.KeyCode)
             {
                 case Keys.Left:
@@ -376,9 +372,30 @@ namespace TetrisWinForms
                 case Keys.Up:
                     RotateBlock();
                     break;
+
             }
 
-            Refresh();
+            Refresh(); // Repaint the game board
+        }
+
+        private void GamePause()
+        {
+            if (!isPaused)
+            {
+                isPaused = true; // Set the game state to paused
+                gameTimer.Stop(); // Stop the timer
+                MessageBox.Show("Game Paused. Press ESC to resume."); // Provide a clear message
+            }
+            else
+            {
+                ResumeGame();
+            }
+        }
+
+        private void ResumeGame()
+        {
+            isPaused = false; // Set the game state to running
+            gameTimer.Start(); // Restart the timer
         }
 
         private void RotateBlock()
