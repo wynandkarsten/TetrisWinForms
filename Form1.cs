@@ -1,43 +1,27 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Collections.Generic;
-using TetrisWinForms;
 
 
 namespace TetrisWinForms
 {
-    enum Tetromino
-    {
-        OShape,
-        IShape,
-        TShape,
-        LShape,
-        ZShape,
-        SShape
-    }
-
-    enum TetrominoColor
-    {
-        Blue,
-        Red,
-        Green,
-        Yellow,
-        Purple,
-        Cyan
-    }
-
     public partial class Form1 : Form
     {
         private int[,] grid; // The Tetris grid
         private int gridRows = 20;
         private int gridCols = 10;
         private int cellSize = 30; // Size of each cell
+        private int gridOffsetX = 10; // Offset from the left
+        private int gridOffsetY = 10; // Offset from the top
         private int[,] currentBlock; // Current tetromino
         private int blockRow, blockCol; // Position of the current block
         private Timer gameTimer;
         private int blockType;
         private int score = 0;
+
+        private Random random = new Random();
+        private int[,] nextPiecePreview;  // To store the preview of the next piece
+        private int nextBlockType;        // To store the type of the next block
 
         private readonly int[][][] tetrominoes = new int[][][]
         {
@@ -87,6 +71,9 @@ namespace TetrisWinForms
             this.Paint += Form1_Paint;
             this.KeyDown += Form1_KeyDown;
 
+            this.Height = (gridCols * cellSize) + 500;
+            this.Width = (gridRows * cellSize) + 100;
+
             InitializeGame();
         }
 
@@ -106,17 +93,32 @@ namespace TetrisWinForms
 
         private void SpawnBlock()
         {
+            if (currentBlock == null)  // Handle the initial game state
+            {
+                // First block, so create a random block for both current and next
+                blockType = random.Next(tetrominoes.Length);
+                currentBlock = GetTetromino(blockType);
+                blockRow = 0;
+                blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
+
+                // Set the next block
+                nextBlockType = random.Next(tetrominoes.Length);
+                nextPiecePreview = GetTetromino(nextBlockType);
+            }
+            else
+            {
+                // Set the current block to the next block
+                blockType = nextBlockType;
+                currentBlock = nextPiecePreview;
+                blockRow = 0;
+                blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
+
+                // Set a new next block for the upcoming round
+                nextBlockType = random.Next(tetrominoes.Length);
+                nextPiecePreview = GetTetromino(nextBlockType);
+            }
+
             score += 5;
-            Random random = new Random();
-            int shapeIndex = random.Next(tetrominoes.Length);
-            blockType = shapeIndex;
-            currentBlock = GetTetromino(shapeIndex);
-            blockRow = 0;
-
-            //blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
-            Random randomCol = new Random();
-            blockCol = randomCol.Next(1, gridCols - currentBlock.GetLength(1) - 1);
-
         }
 
         private int[,] GetTetromino(int index)
@@ -140,6 +142,18 @@ namespace TetrisWinForms
         {
             Graphics g = e.Graphics;
 
+            // Draw the score at the top
+            string scoreText = $"Score: {score}";
+            Font font = new Font("Arial", 16, FontStyle.Bold);
+            Brush textBrush = Brushes.Black;
+            int scoreHeight = (int)font.GetHeight();  // Height of the score text
+            g.DrawString(scoreText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 10); // Position the score at (10, 10)
+
+            // Draw Next Piece text:
+            string nextPieceText = "Next Piece:";
+            g.DrawString(nextPieceText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 40);
+
+
             // Draw the grid
             for (int y = 0; y < gridRows; y++)
             {
@@ -147,9 +161,9 @@ namespace TetrisWinForms
                 {
                     if (grid[y, x] == 1)
                     {
-                        g.FillRectangle(Brushes.Blue, x * cellSize, y * cellSize, cellSize, cellSize);
+                        g.FillRectangle(Brushes.Blue, (x * cellSize) + gridOffsetX, y * cellSize, cellSize, cellSize);
                     }
-                    g.DrawRectangle(Pens.Black, x * cellSize, y * cellSize, cellSize, cellSize);
+                    g.DrawRectangle(Pens.Black, (x * cellSize) + gridOffsetX, y * cellSize, cellSize, cellSize);
                 }
             }
 
@@ -160,45 +174,34 @@ namespace TetrisWinForms
                 {
                     if (currentBlock[r, c] == 1)
                     {
-                        g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                        switch (blockType)
-                        {   // O-Piece
-                            case 0:
-                                g.FillRectangle(Brushes.Blue, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // I Piece
-                            case 1:
-                                g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // T Piece
-                            case 2:
-                                g.FillRectangle(Brushes.Yellow, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // L-Piece
-                            case 3:
-                                g.FillRectangle(Brushes.Purple, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // Z Piece
-                            case 4:
-                                g.FillRectangle(Brushes.DarkCyan, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // S Piece
-                            case 5:
-                                g.FillRectangle(Brushes.Green, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            // Reverse L-Piece
-                            case 6:
-                                g.FillRectangle(Brushes.White, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                            default:
-                                g.FillRectangle(Brushes.Gray, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                                break;
-                        }
-                        g.DrawRectangle(Pens.Black, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                        //g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                        //g.DrawRectangle(Pens.Black, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+
+                        g.FillRectangle(Brushes.Red, ((blockCol + c) * cellSize) + gridOffsetX, (blockRow + r) * cellSize, cellSize, cellSize);
+                        g.DrawRectangle(Pens.Black, ((blockCol + c) * cellSize) + gridOffsetX, (blockRow + r) * cellSize, cellSize, cellSize);
+
+                    }
+                }
+            }
+
+            // Draw the next piece preview (on the right side of the grid)
+            int previewOffsetX = (gridCols * cellSize) + 20;  // 20 pixels from the right edge of the grid
+            int previewOffsetY = 70;  // Start 50 pixels from the top
+
+            for (int r = 0; r < nextPiecePreview.GetLength(0); r++)
+            {
+                for (int c = 0; c < nextPiecePreview.GetLength(1); c++)
+                {
+                    if (nextPiecePreview[r, c] == 1)
+                    {
+                        g.FillRectangle(Brushes.Gray, previewOffsetX + c * cellSize, previewOffsetY + r * cellSize, cellSize, cellSize);
+                        g.DrawRectangle(Pens.Black, previewOffsetX + c * cellSize, previewOffsetY + r * cellSize, cellSize, cellSize);
                     }
                 }
             }
         }
+
+
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
@@ -378,26 +381,6 @@ namespace TetrisWinForms
             Refresh(); // Repaint the game board
         }
 
-        private void GamePause()
-        {
-            if (!isPaused)
-            {
-                isPaused = true; // Set the game state to paused
-                gameTimer.Stop(); // Stop the timer
-                MessageBox.Show("Game Paused. Press ESC to resume."); // Provide a clear message
-            }
-            else
-            {
-                ResumeGame();
-            }
-        }
-
-        private void ResumeGame()
-        {
-            isPaused = false; // Set the game state to running
-            gameTimer.Start(); // Restart the timer
-        }
-
         private void RotateBlock()
         {
             int[,] rotatedBlock = RotateMatrixClockwise(currentBlock);
@@ -457,9 +440,7 @@ namespace TetrisWinForms
                     }
                 }
             }
-
             return true;
         }
-
     }
 }
