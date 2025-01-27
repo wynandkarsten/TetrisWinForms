@@ -12,7 +12,7 @@ namespace TetrisWinForms
         private int gridCols = 10;
         private int cellSize = 30; // Size of each cell
         private int gridOffsetX = 10; // Offset from the left
-        private int gridOffsetY = 10; // Offset from the top
+        private int gridOffsetY = 20; // Offset from the top
         private int[,] currentBlock; // Current tetromino
         private int blockRow, blockCol; // Position of the current block
         private Timer gameTimer;
@@ -147,11 +147,11 @@ namespace TetrisWinForms
             Font font = new Font("Arial", 16, FontStyle.Bold);
             Brush textBrush = Brushes.Black;
             int scoreHeight = (int)font.GetHeight();  // Height of the score text
-            g.DrawString(scoreText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 10); // Position the score at (10, 10)
+            g.DrawString(scoreText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 10 + gridOffsetY); // Position the score at (10, 10)
 
             // Draw Next Piece text:
             string nextPieceText = "Next Piece:";
-            g.DrawString(nextPieceText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 40);
+            g.DrawString(nextPieceText, font, textBrush, (gridCols * cellSize) + 10 + gridOffsetX, 40 + gridOffsetY);
 
 
             // Draw the grid
@@ -161,11 +161,24 @@ namespace TetrisWinForms
                 {
                     if (grid[y, x] == 1)
                     {
-                        g.FillRectangle(Brushes.Blue, (x * cellSize) + gridOffsetX, y * cellSize, cellSize, cellSize);
+                        g.FillRectangle(Brushes.Blue, (x * cellSize) + gridOffsetX, (y * cellSize) + gridOffsetY, cellSize, cellSize);
                     }
-                    g.DrawRectangle(Pens.Black, (x * cellSize) + gridOffsetX, y * cellSize, cellSize, cellSize);
+                    g.DrawRectangle(Pens.Black, (x * cellSize) + gridOffsetX, (y * cellSize) + gridOffsetY, cellSize, cellSize);
                 }
             }
+
+            // Draw the current block
+            //for (int r = 0; r < currentBlock.GetLength(0); r++)
+            //{
+            //    for (int c = 0; c < currentBlock.GetLength(1); c++)
+            //    {
+            //        if (currentBlock[r, c] == 1)
+            //        {
+            //            g.FillRectangle(Brushes.Red, ((blockCol + c) * cellSize) + gridOffsetX, ((blockRow + r) * cellSize) + gridOffsetY, cellSize, cellSize);
+            //            g.DrawRectangle(Pens.Black, ((blockCol + c) * cellSize) + gridOffsetX, ((blockRow + r) * cellSize) + gridOffsetY, cellSize, cellSize);
+            //        }
+            //    }
+            //}
 
             // Draw the current block
             for (int r = 0; r < currentBlock.GetLength(0); r++)
@@ -174,12 +187,22 @@ namespace TetrisWinForms
                 {
                     if (currentBlock[r, c] == 1)
                     {
-                        //g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
-                        //g.DrawRectangle(Pens.Black, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                        int x = ((blockCol + c) * cellSize) + gridOffsetX;
+                        int y = ((blockRow + r) * cellSize) + gridOffsetY;
 
-                        g.FillRectangle(Brushes.Red, ((blockCol + c) * cellSize) + gridOffsetX, (blockRow + r) * cellSize, cellSize, cellSize);
-                        g.DrawRectangle(Pens.Black, ((blockCol + c) * cellSize) + gridOffsetX, (blockRow + r) * cellSize, cellSize, cellSize);
+                        switch (blockType)
+                        {
+                            case 0: g.FillRectangle(Brushes.Blue, x, y, cellSize, cellSize); break; // O-Piece
+                            case 1: g.FillRectangle(Brushes.Red, x, y, cellSize, cellSize); break; // I-Piece
+                            case 2: g.FillRectangle(Brushes.Yellow, x, y, cellSize, cellSize); break; // T-Piece
+                            case 3: g.FillRectangle(Brushes.Purple, x, y, cellSize, cellSize); break; // L-Piece
+                            case 4: g.FillRectangle(Brushes.DarkCyan, x, y, cellSize, cellSize); break; // Z-Piece
+                            case 5: g.FillRectangle(Brushes.Green, x, y, cellSize, cellSize); break; // S-Piece
+                            case 6: g.FillRectangle(Brushes.White, x, y, cellSize, cellSize); break; // Reverse L-Piece
+                            default: g.FillRectangle(Brushes.Gray, x, y, cellSize, cellSize); break;
+                        }
 
+                        g.DrawRectangle(Pens.Black, x, y, cellSize, cellSize);
                     }
                 }
             }
@@ -194,8 +217,24 @@ namespace TetrisWinForms
                 {
                     if (nextPiecePreview[r, c] == 1)
                     {
-                        g.FillRectangle(Brushes.Gray, previewOffsetX + c * cellSize, previewOffsetY + r * cellSize, cellSize, cellSize);
-                        g.DrawRectangle(Pens.Black, previewOffsetX + c * cellSize, previewOffsetY + r * cellSize, cellSize, cellSize);
+                        int previewX = (c * cellSize) + previewOffsetX + gridOffsetX;
+                        int previewY = (r * cellSize) + previewOffsetY + gridOffsetY;
+
+                        //g.FillRectangle(Brushes.Gray, (c * cellSize) + previewOffsetX + gridOffsetX, previewOffsetY + r * cellSize + gridOffsetY, cellSize, cellSize);
+                        switch (nextBlockType)
+                        {
+                            case 0: g.FillRectangle(Brushes.Blue, previewX, previewY, cellSize, cellSize); break; // O-Piece
+                            case 1: g.FillRectangle(Brushes.Red, previewX, previewY, cellSize, cellSize); break; // I-Piece
+                            case 2: g.FillRectangle(Brushes.Yellow, previewX, previewY, cellSize, cellSize); break; // T-Piece
+                            case 3: g.FillRectangle(Brushes.Purple, previewX, previewY, cellSize, cellSize); break; // L-Piece
+                            case 4: g.FillRectangle(Brushes.DarkCyan, previewX, previewY, cellSize, cellSize); break; // Z-Piece
+                            case 5: g.FillRectangle(Brushes.Green, previewX, previewY, cellSize, cellSize); break; // S-Piece
+                            case 6: g.FillRectangle(Brushes.White, previewX, previewY, cellSize, cellSize); break; // Reverse L-Piece
+                            default: g.FillRectangle(Brushes.Gray, previewX, previewY, cellSize, cellSize); break;
+                        }
+
+
+                        g.DrawRectangle(Pens.Black, (c * cellSize) + previewOffsetX + gridOffsetX, previewOffsetY + r * cellSize + gridOffsetY, cellSize, cellSize);
                     }
                 }
             }
@@ -288,19 +327,19 @@ namespace TetrisWinForms
             }
             if (clearedRows == 1)
             {
-                score += 100 * clearedRows;
+                score += 100;
             }
             else if (clearedRows == 2)
             {
-                score += 200 * clearedRows;
+                score += 200;
             }
             else if (clearedRows == 3)
             {
-                score += 500 * clearedRows;
+                score += 500;
             }
             else if (clearedRows == 4)
             {
-                score += 1000 * clearedRows;
+                score += 1000;
             }
         }
 
