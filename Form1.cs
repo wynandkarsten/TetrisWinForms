@@ -1,11 +1,45 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Collections.Generic;
+using TetrisWinForms;
+
 
 namespace TetrisWinForms
 {
+    enum Tetromino
+    {
+        OShape,
+        IShape,
+        TShape,
+        LShape,
+        ZShape,
+        SShape
+    }
+
+    enum TetrominoColor
+    {
+        Blue,
+        Red,
+        Green,
+        Yellow,
+        Purple,
+        Cyan
+    }
+
     public partial class Form1 : Form
     {
+
+        //private Dictionary<Tetromino, TetrominoColor> tetrominoColorMap = new Dictionary<Tetromino, TetrominoColor>
+        //{
+        //    { Tetromino.OShape, TetrominoColor.Yellow },
+        //    { Tetromino.IShape, TetrominoColor.Cyan },
+        //    { Tetromino.TShape, TetrominoColor.Purple },
+        //    { Tetromino.LShape, TetrominoColor.Blue },
+        //    { Tetromino.ZShape, TetrominoColor.Red },
+        //    { Tetromino.SShape, TetrominoColor.Green }
+        //};
+
         private int[,] grid; // The Tetris grid
         private int gridRows = 20;
         private int gridCols = 10;
@@ -13,6 +47,28 @@ namespace TetrisWinForms
         private int[,] currentBlock; // Current tetromino
         private int blockRow, blockCol; // Position of the current block
         private Timer gameTimer;
+        private int blockType;
+
+        //private Brush GetBrushForColor(TetrominoColor color)
+        //{
+        //    switch (color)
+        //    {
+        //        case TetrominoColor.Blue:
+        //            return Brushes.Blue;
+        //        case TetrominoColor.Red:
+        //            return Brushes.Red;
+        //        case TetrominoColor.Green:
+        //            return Brushes.Green;
+        //        case TetrominoColor.Yellow:
+        //            return Brushes.Yellow;
+        //        case TetrominoColor.Purple:
+        //            return Brushes.Purple;
+        //        case TetrominoColor.Cyan:
+        //            return Brushes.Cyan;
+        //        default:
+        //            return Brushes.Gray;
+        //    }
+        //}
 
         private readonly int[][][] tetrominoes = new int[][][]
         {
@@ -41,10 +97,16 @@ namespace TetrisWinForms
                 new int[] { 1, 1, 0 },
                 new int[] { 0, 1, 1 }
             },
-            new int[][] // Reverse Z-Shape
+            new int[][] // S-shape
             {
                 new int[] { 0, 1, 1 },
                 new int[] { 1, 1, 0 }
+            },
+            new int[][] // Reverse L-Shape
+            {
+                new int[] { 0, 1 },
+                new int[] { 0, 1 },
+                new int[] { 1, 1 }
             }
         };
 
@@ -76,6 +138,7 @@ namespace TetrisWinForms
         {
             Random random = new Random();
             int shapeIndex = random.Next(tetrominoes.Length);
+            blockType = shapeIndex;
             currentBlock = GetTetromino(shapeIndex);
             blockRow = 0;
             blockCol = (gridCols - currentBlock.GetLength(1)) / 2;
@@ -94,7 +157,7 @@ namespace TetrisWinForms
                     shape[r, c] = tetrominoes[index][r][c];
                 }
             }
-
+            Console.WriteLine(shape);
             return shape;
         }
 
@@ -115,6 +178,10 @@ namespace TetrisWinForms
                 }
             }
 
+            //// Get the color for the current block
+            //TetrominoColor currentColor = blockType;
+            //Brush blockBrush = GetBrushForColor(currentColor);
+
             // Draw the current block
             for (int r = 0; r < currentBlock.GetLength(0); r++)
             {
@@ -123,6 +190,39 @@ namespace TetrisWinForms
                     if (currentBlock[r, c] == 1)
                     {
                         g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                        switch (blockType)
+                        {   // O-Piece
+                            case 0:
+                                g.FillRectangle(Brushes.Blue, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // I Piece
+                            case 1:
+                                g.FillRectangle(Brushes.Red, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // T Piece
+                            case 2:
+                                g.FillRectangle(Brushes.Yellow, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // L-Piece
+                            case 3:
+                                g.FillRectangle(Brushes.Purple, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // Z Piece
+                            case 4:
+                                g.FillRectangle(Brushes.DarkCyan, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // S Piece
+                            case 5:
+                                g.FillRectangle(Brushes.Green, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            // Reverse L-Piece
+                            case 6:
+                                g.FillRectangle(Brushes.White, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                            default:
+                                g.FillRectangle(Brushes.Gray, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
+                                break;
+                        }
                         g.DrawRectangle(Pens.Black, (blockCol + c) * cellSize, (blockRow + r) * cellSize, cellSize, cellSize);
                     }
                 }
@@ -231,8 +331,27 @@ namespace TetrisWinForms
         private void GameOver()
         {
             gameTimer.Stop();
-            MessageBox.Show("Game Over!");
+            MessageBox.Show("Game Over! Press 'Y' to restart or 'N' to quit.");
+            //this.KeyPress += GameOver_KeyPress;
             InitializeGame();
+        }
+
+        private void GameOver_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == 'y' || e.KeyChar == 'Y')
+            {
+                // Restart the game
+                InitializeGame();
+
+                // Detach the event handler to avoid duplicate handling
+                this.KeyPress -= GameOver_KeyPress;
+            }
+            else if (e.KeyChar == 'n' || e.KeyChar == 'N')
+            {
+                // Quit the game
+                this.KeyPress -= GameOver_KeyPress;
+                this.Close(); // Closes the application
+            }
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
